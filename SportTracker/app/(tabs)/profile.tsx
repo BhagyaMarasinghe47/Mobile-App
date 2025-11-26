@@ -60,17 +60,16 @@ export default function ProfileScreen() {
         {/* Header */}
         <View style={[styles.header, { backgroundColor: colors.cardBackground, borderBottomColor: colors.border }]}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>My Profile</Text>
-          <TouchableOpacity style={[styles.editButton, { backgroundColor: colors.editButtonBg }]}>
-            <Feather name="edit-2" size={20} color={colors.text} />
-          </TouchableOpacity>
         </View>
 
         {/* Profile Avatar Section */}
         <View style={[styles.profileSection, { backgroundColor: colors.cardBackground, borderBottomColor: colors.border }]}>
           <View style={styles.avatarContainer}>
-            <View style={[styles.avatarCircle, { backgroundColor: colors.avatarBg }]}>
-              <Feather name="user" size={60} color="#007AFF" />
-            </View>
+            <Image 
+              source={require('@/assets/images/profile.png')}
+              style={styles.avatarImage}
+              resizeMode="cover"
+            />
           </View>
           <Text style={[styles.profileName, { color: colors.text }]}>
             {user?.firstName || user?.username || 'Guest'}
@@ -180,16 +179,17 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
+    color: '#333',
+    textAlign: 'center',
   },
   editButton: {
     width: 40,
@@ -205,6 +205,13 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     marginBottom: 16,
+  },
+  avatarImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: '#007AFF',
   },
   avatarCircle: {
     width: 120,

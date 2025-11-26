@@ -8,16 +8,27 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import axios from 'axios';
+import { useAppSelector } from '@/src/redux/store';
 
 export default function EventDetailsScreen() {
   const { id, eventData } = useLocalSearchParams();
   const router = useRouter();
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  
+  const isDark = useAppSelector((state) => state.theme.isDarkMode);
+  const colors = {
+    background: isDark ? '#000' : '#f8f9fa',
+    cardBackground: isDark ? '#1C1C1E' : '#fff',
+    text: isDark ? '#fff' : '#333',
+    textSecondary: isDark ? '#999' : '#666',
+    border: isDark ? '#2C2C2E' : '#e5e5e5',
+  };
 
   useEffect(() => {
     if (eventData) {
@@ -57,9 +68,18 @@ export default function EventDetailsScreen() {
     });
   };
 
+  const openVideo = () => {
+    if (event?.strVideo) {
+      Linking.openURL(event.strVideo);
+    }
+  };
+
+  const isFinished = event?.strStatus?.toLowerCase().includes('finished');
+  const displayImage = event?.strPoster || event?.strBanner || event?.strSquare || event?.strThumb;
+
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#007AFF" />
         </View>
@@ -69,111 +89,188 @@ export default function EventDetailsScreen() {
 
   if (!event) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Event not found</Text>
+          <Feather name="alert-circle" size={60} color="#ff3b30" />
+          <Text style={[styles.errorText, { color: colors.text }]}>Event not found</Text>
+          <TouchableOpacity style={styles.backButtonError} onPress={() => router.back()}>
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Feather name="arrow-left" size={24} color="#333" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Event Details</Text>
-        </View>
+        {/* Header Image */}
+        {displayImage && (
+          <View style={styles.imageContainer}>
+            <Image
+              source={{ uri: displayImage }}
+              style={styles.headerImage}
+              resizeMode="cover"
+            />
+            <TouchableOpacity 
+              style={styles.backButtonOverlay}
+              onPress={() => router.back()}
+            >
+              <Feather name="arrow-left" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        )}
 
-        <View style={styles.content}>
+        <View style={styles.contentContainer}>
           {/* Event Title */}
-          <Text style={styles.eventTitle}>{event.strEvent}</Text>
-          
-          {/* Teams */}
-          <View style={styles.teamsContainer}>
-            <View style={styles.teamBox}>
-              <Feather name="shield" size={40} color="#007AFF" />
-              <Text style={styles.teamName}>{event.strHomeTeam}</Text>
-            </View>
-            
-            <Text style={styles.vsText}>VS</Text>
-            
-            <View style={styles.teamBox}>
-              <Feather name="shield" size={40} color="#FF3B30" />
-              <Text style={styles.teamName}>{event.strAwayTeam}</Text>
+          <View style={[styles.titleSection, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+            <Text style={[styles.eventTitle, { color: colors.text }]}>{event.strEvent}</Text>
+            <View style={[styles.statusBadge, isFinished ? styles.finishedBadge : styles.upcomingBadge]}>
+              <Text style={styles.statusText}>{isFinished ? 'Match Finished' : 'Upcoming Match'}</Text>
             </View>
           </View>
 
-          {/* Scores if available */}
-          {event.intHomeScore !== null && event.intAwayScore !== null && (
-            <View style={styles.scoreContainer}>
-              <Text style={styles.scoreText}>
-                {event.intHomeScore} - {event.intAwayScore}
-              </Text>
-              <Text style={styles.scoreLabel}>Final Score</Text>
-            </View>
-          )}
+          {/* Teams Section */}
+          <View style={[styles.teamsSection, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+            <View style={styles.teamsRow}>
+              {/* Home Team */}
+              <View style={styles.teamBox}>
+                {event.strHomeTeamBadge ? (
+                  <Image
+                    source={{ uri: event.strHomeTeamBadge }}
+                    style={styles.teamBadgeLarge}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <Feather name="shield" size={60} color="#007AFF" />
+                )}
+                <Text style={[styles.teamNameLarge, { color: colors.text }]}>
+                  {event.strHomeTeam}
+                </Text>
+                {event.intHomeScore !== undefined && event.intHomeScore !== null && (
+                  <View style={styles.scoreBox}>
+                    <Text style={styles.scoreLarge}>{event.intHomeScore}</Text>
+                  </View>
+                )}
+              </View>
 
-          {/* Event Info */}
-          <View style={styles.infoGrid}>
+              {/* VS */}
+              <View style={styles.vsSection}>
+                <Text style={styles.vsLarge}>VS</Text>
+              </View>
+
+              {/* Away Team */}
+              <View style={styles.teamBox}>
+                {event.strAwayTeamBadge ? (
+                  <Image
+                    source={{ uri: event.strAwayTeamBadge }}
+                    style={styles.teamBadgeLarge}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <Feather name="shield" size={60} color="#007AFF" />
+                )}
+                <Text style={[styles.teamNameLarge, { color: colors.text }]}>
+                  {event.strAwayTeam}
+                </Text>
+                {event.intAwayScore !== undefined && event.intAwayScore !== null && (
+                  <View style={styles.scoreBox}>
+                    <Text style={styles.scoreLarge}>{event.intAwayScore}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+
+          {/* Match Information */}
+          <View style={[styles.infoSection, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Match Information</Text>
+            
+            {event.strLeague && (
+              <View style={styles.infoRow}>
+                <Feather name="award" size={20} color="#007AFF" />
+                <View style={styles.infoContent}>
+                  <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>League</Text>
+                  <Text style={[styles.infoValue, { color: colors.text }]}>{event.strLeague}</Text>
+                </View>
+              </View>
+            )}
+
             {event.dateEvent && (
-              <View style={styles.infoCard}>
+              <View style={styles.infoRow}>
                 <Feather name="calendar" size={20} color="#007AFF" />
-                <Text style={styles.infoLabel}>Date</Text>
-                <Text style={styles.infoValue}>{formatDate(event.dateEvent)}</Text>
+                <View style={styles.infoContent}>
+                  <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Date</Text>
+                  <Text style={[styles.infoValue, { color: colors.text }]}>{formatDate(event.dateEvent)}</Text>
+                </View>
               </View>
             )}
 
             {event.strTime && (
-              <View style={styles.infoCard}>
+              <View style={styles.infoRow}>
                 <Feather name="clock" size={20} color="#007AFF" />
-                <Text style={styles.infoLabel}>Time</Text>
-                <Text style={styles.infoValue}>{event.strTime}</Text>
+                <View style={styles.infoContent}>
+                  <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Time</Text>
+                  <Text style={[styles.infoValue, { color: colors.text }]}>{event.strTime}</Text>
+                </View>
               </View>
             )}
 
             {event.strVenue && (
-              <View style={styles.infoCard}>
+              <View style={styles.infoRow}>
                 <Feather name="map-pin" size={20} color="#007AFF" />
-                <Text style={styles.infoLabel}>Venue</Text>
-                <Text style={styles.infoValue}>{event.strVenue}</Text>
-              </View>
-            )}
-
-            {event.strLeague && (
-              <View style={styles.infoCard}>
-                <Feather name="award" size={20} color="#007AFF" />
-                <Text style={styles.infoLabel}>League</Text>
-                <Text style={styles.infoValue}>{event.strLeague}</Text>
+                <View style={styles.infoContent}>
+                  <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Venue</Text>
+                  <Text style={[styles.infoValue, { color: colors.text }]}>{event.strVenue}</Text>
+                  {event.strCity && (
+                    <Text style={[styles.infoSubtext, { color: colors.textSecondary }]}>
+                      {event.strCity}{event.strCountry ? `, ${event.strCountry}` : ''}
+                    </Text>
+                  )}
+                </View>
               </View>
             )}
 
             {event.strSeason && (
-              <View style={styles.infoCard}>
-                <Feather name="calendar" size={20} color="#007AFF" />
-                <Text style={styles.infoLabel}>Season</Text>
-                <Text style={styles.infoValue}>{event.strSeason}</Text>
+              <View style={styles.infoRow}>
+                <Feather name="flag" size={20} color="#007AFF" />
+                <View style={styles.infoContent}>
+                  <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Season</Text>
+                  <Text style={[styles.infoValue, { color: colors.text }]}>{event.strSeason}</Text>
+                </View>
               </View>
             )}
 
-            {event.strStatus && (
-              <View style={styles.infoCard}>
-                <Feather name="info" size={20} color="#007AFF" />
-                <Text style={styles.infoLabel}>Status</Text>
-                <Text style={styles.infoValue}>{event.strStatus}</Text>
+            {event.intRound && (
+              <View style={styles.infoRow}>
+                <Feather name="hash" size={20} color="#007AFF" />
+                <View style={styles.infoContent}>
+                  <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Round</Text>
+                  <Text style={[styles.infoValue, { color: colors.text }]}>Round {event.intRound}</Text>
+                </View>
               </View>
             )}
           </View>
 
           {/* Description */}
           {event.strDescriptionEN && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>About This Event</Text>
-              <Text style={styles.description}>{event.strDescriptionEN}</Text>
+            <View style={[styles.descriptionSection, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>About</Text>
+              <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>
+                {event.strDescriptionEN}
+              </Text>
             </View>
+          )}
+
+          {/* Video Highlights */}
+          {event.strVideo && isFinished && (
+            <TouchableOpacity
+              style={styles.videoButton}
+              onPress={openVideo}
+            >
+              <Feather name="youtube" size={24} color="#fff" />
+              <Text style={styles.videoButtonText}>Watch Highlights</Text>
+            </TouchableOpacity>
           )}
         </View>
       </ScrollView>
@@ -184,7 +281,6 @@ export default function EventDetailsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   loadingContainer: {
     flex: 1,
@@ -195,135 +291,174 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
   errorText: {
     fontSize: 18,
-    color: '#999',
+    marginTop: 16,
+    marginBottom: 24,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
+  backButtonError: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  imageContainer: {
+    position: 'relative',
+    width: '100%',
+    height: 250,
+  },
+  headerImage: {
+    width: '100%',
+    height: '100%',
+  },
+  backButtonOverlay: {
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#333',
+  contentContainer: {
+    padding: 16,
   },
-  content: {
-    padding: 20,
+  titleSection: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
   },
   eventTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#333',
-    marginBottom: 20,
-    textAlign: 'center',
+    marginBottom: 12,
   },
-  teamsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    marginBottom: 30,
-    backgroundColor: '#fff',
-    padding: 20,
+  statusBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
   },
-  teamBox: {
-    alignItems: 'center',
-    flex: 1,
+  finishedBadge: {
+    backgroundColor: '#34C759',
   },
-  teamName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginTop: 12,
-    textAlign: 'center',
-  },
-  vsText: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#999',
-    marginHorizontal: 10,
-  },
-  scoreContainer: {
+  upcomingBadge: {
     backgroundColor: '#007AFF',
-    padding: 20,
-    borderRadius: 16,
-    alignItems: 'center',
-    marginBottom: 20,
   },
-  scoreText: {
-    fontSize: 36,
-    fontWeight: '700',
+  statusText: {
     color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
-  scoreLabel: {
-    fontSize: 14,
-    color: '#fff',
-    marginTop: 8,
-    opacity: 0.9,
-  },
-  infoGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 20,
-  },
-  infoCard: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: '#fff',
+  teamsSection: {
     padding: 16,
     borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+  },
+  teamsRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    justifyContent: 'space-between',
+  },
+  teamBox: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  teamBadgeLarge: {
+    width: 80,
+    height: 80,
+    marginBottom: 8,
+  },
+  teamNameLarge: {
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  scoreBox: {
+    marginTop: 4,
+  },
+  scoreLarge: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#007AFF',
+  },
+  vsSection: {
+    paddingHorizontal: 16,
+  },
+  vsLarge: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#999',
+  },
+  infoSection: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
+  },
+  infoContent: {
+    flex: 1,
+    marginLeft: 12,
   },
   infoLabel: {
     fontSize: 12,
-    color: '#999',
-    marginTop: 8,
+    marginBottom: 4,
   },
   infoValue: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#333',
-    marginTop: 4,
-    textAlign: 'center',
   },
-  section: {
-    marginTop: 20,
+  infoSubtext: {
+    fontSize: 14,
+    marginTop: 2,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 12,
+  descriptionSection: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
   },
-  description: {
+  descriptionText: {
     fontSize: 15,
-    color: '#666',
     lineHeight: 24,
+  },
+  videoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FF0000',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  videoButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });

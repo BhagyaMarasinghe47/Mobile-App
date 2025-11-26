@@ -10,8 +10,15 @@ export interface CricketEvent {
   strHomeTeam?: string;
   strAwayTeam?: string;
   strThumb?: string;
+  strSquare?: string;
+  strPoster?: string;
+  strBanner?: string;
   strVenue?: string;
   strStatus?: string;
+  strHomeTeamBadge?: string;
+  strAwayTeamBadge?: string;
+  intHomeScore?: string;
+  intAwayScore?: string;
 }
 
 interface EventsResponse {
@@ -28,25 +35,33 @@ export const useUpcomingEvents = () => {
       setLoading(true);
       setError(null);
       
-      // Fetch next events for cricket leagues - using a popular cricket league ID
-      // You can change this to fetch from multiple leagues
-      const leagueIds = ['4328']; // International Cricket
+      // Fetch next 15 upcoming events from English Premier League (ID: 4328)
+      const response = await axios.get<EventsResponse>(
+        `https://www.thesportsdb.com/api/v1/json/3/eventsnextleague.php?id=4328`
+      );
       
-      let allEvents: CricketEvent[] = [];
-      
-      for (const leagueId of leagueIds) {
-        const response = await axios.get<EventsResponse>(
-          `https://www.thesportsdb.com/api/v1/json/3/eventsnextleague.php?id=${leagueId}`
-        );
+      if (response.data.events) {
+        // Filter and sort upcoming events
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         
-        if (response.data.events) {
-          allEvents = [...allEvents, ...response.data.events];
-        }
+        const upcomingEvents = response.data.events
+          .filter(event => {
+            if (!event || !event.dateEvent) return false;
+            const eventDate = new Date(event.dateEvent);
+            return eventDate >= today; // Only future events
+          })
+          .sort((a, b) => {
+            const dateA = new Date(a.dateEvent || '');
+            const dateB = new Date(b.dateEvent || '');
+            return dateA.getTime() - dateB.getTime(); // Nearest first
+          })
+          .slice(0, 15);
+        
+        setEvents(upcomingEvents);
+      } else {
+        setEvents([]);
       }
-      
-      // Filter out null entries and limit to 10 events
-      const validEvents = allEvents.filter(event => event !== null).slice(0, 10);
-      setEvents(validEvents);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch events');
       console.error('Error fetching events:', err);

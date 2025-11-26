@@ -33,10 +33,20 @@ export default function TeamsScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const favourites = useAppSelector((state) => state.favourites.teams);
+  const isDark = useAppSelector((state) => state.theme.isDarkMode);
   const [teams, setTeams] = useState<CricketTeam[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Dynamic colors based on theme
+  const colors = {
+    background: isDark ? '#000' : '#f8f9fa',
+    cardBackground: isDark ? '#1C1C1E' : '#fff',
+    text: isDark ? '#fff' : '#333',
+    textSecondary: isDark ? '#999' : '#666',
+    border: isDark ? '#2C2C2E' : '#e5e5e5',
+  };
 
   const fetchTeams = async () => {
     try {
@@ -137,13 +147,13 @@ export default function TeamsScreen() {
 
     return (
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, { backgroundColor: colors.cardBackground }]}
         onPress={() => handleTeamPress(item)}
         activeOpacity={0.9}
       >
         <View style={styles.cardRow}>
           {/* Badge on Left */}
-          <View style={styles.badgeSection}>
+          <View style={[styles.badgeSection, { backgroundColor: colors.background }]}>
             {badgeImage ? (
               <Image
                 source={{ uri: badgeImage }}
@@ -161,7 +171,7 @@ export default function TeamsScreen() {
           {/* Details on Right */}
           <View style={styles.detailsSection}>
             <View style={styles.headerRow}>
-              <Text style={styles.teamName} numberOfLines={2}>
+              <Text style={[styles.teamName, { color: colors.text }]} numberOfLines={2}>
                 {item.strTeam}
               </Text>
               <TouchableOpacity
@@ -181,29 +191,29 @@ export default function TeamsScreen() {
             <View style={styles.infoRow}>
               {item.strCountry && (
                 <View style={styles.infoItem}>
-                  <Feather name="map-pin" size={12} color="#666" />
-                  <Text style={styles.infoText}>{item.strCountry}</Text>
+                  <Feather name="map-pin" size={12} color={colors.textSecondary} />
+                  <Text style={[styles.infoText, { color: colors.textSecondary }]}>{item.strCountry}</Text>
                 </View>
               )}
               {item.intFormedYear && (
                 <View style={styles.infoItem}>
-                  <Feather name="calendar" size={12} color="#666" />
-                  <Text style={styles.infoText}>{item.intFormedYear}</Text>
+                  <Feather name="calendar" size={12} color={colors.textSecondary} />
+                  <Text style={[styles.infoText, { color: colors.textSecondary }]}>{item.intFormedYear}</Text>
                 </View>
               )}
             </View>
 
             {item.strStadium && (
               <View style={styles.infoItem}>
-                <Feather name="home" size={12} color="#666" />
-                <Text style={styles.infoText} numberOfLines={1}>
+                <Feather name="home" size={12} color={colors.textSecondary} />
+                <Text style={[styles.infoText, { color: colors.textSecondary }]} numberOfLines={1}>
                   {item.strStadium}
                 </Text>
               </View>
             )}
 
             {item.strDescriptionEN && (
-              <Text style={styles.description} numberOfLines={2}>
+              <Text style={[styles.description, { color: colors.textSecondary }]} numberOfLines={2}>
                 {item.strDescriptionEN}
               </Text>
             )}
@@ -220,39 +230,39 @@ export default function TeamsScreen() {
 
   if (loading && teams.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Soccer Teams</Text>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { backgroundColor: colors.cardBackground, borderBottomColor: colors.border }]}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Soccer Teams</Text>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>Loading teams...</Text>
+          <Text style={[styles.loadingText, { color: colors.text }]}>Loading teams...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Soccer Teams</Text>
-        <Text style={styles.headerSubtitle}>{filteredTeams.length} teams</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.cardBackground, borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Soccer Teams</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>{filteredTeams.length} teams</Text>
       </View>
 
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Feather name="search" size={20} color="#999" style={styles.searchIcon} />
+      <View style={[styles.searchContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+        <Feather name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { color: colors.text }]}
           placeholder="Search teams by name, country, stadium..."
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
           returnKeyType="search"
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <Feather name="x" size={20} color="#999" />
+            <Feather name="x" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -384,8 +394,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   badgeImage: {
-    width: 80,
-    height: 80,
+    width: 100,
+    height: 100,
   },
   badgePlaceholder: {
     width: '100%',

@@ -40,6 +40,17 @@ export default function HomeScreen() {
   const { leagues, loading: leaguesLoading, error: leaguesError, refetch: refetchLeagues } = useCricketLeagues();
   const { user } = useAppSelector((state) => state.auth);
   const favourites = useAppSelector((state) => state.favourites);
+  const isDark = useAppSelector((state) => state.theme.isDarkMode);
+
+  // Dynamic colors based on theme
+  const colors = {
+    background: isDark ? '#000' : '#f8f9fa',
+    cardBackground: isDark ? '#1C1C1E' : '#fff',
+    text: isDark ? '#fff' : '#333',
+    textSecondary: isDark ? '#999' : '#666',
+    border: isDark ? '#2C2C2E' : '#e5e5e5',
+    sectionBg: isDark ? '#1C1C1E' : '#fff',
+  };
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const eventsFadeAnim = useRef(new Animated.Value(0)).current;
   const leaguesFadeAnim = useRef(new Animated.Value(0)).current;
@@ -258,8 +269,14 @@ export default function HomeScreen() {
     });
   };
 
-  const handleEventPress = (eventId: string) => {
-    console.log('Event pressed:', eventId);
+  const handleEventPress = (event: any) => {
+    router.push({
+      pathname: '/event-details/[id]',
+      params: {
+        id: event.idEvent,
+        eventData: JSON.stringify(event),
+      },
+    });
   };
 
   const handleLeaguePress = (leagueId: string) => {
@@ -286,7 +303,7 @@ export default function HomeScreen() {
           <View style={styles.headerRow}>
             <View style={styles.textContainer}>
               <Text style={styles.greeting}>
-                Welcome back{user ? `, ${user.firstName || user.username}` : ''}! 👋
+                Welcome back{user ? `, ${user.firstName || user.username}` : ''}!
               </Text>
               <Text style={styles.subtitle}>Explore Soccer Teams & Events</Text>
             </View>
@@ -298,12 +315,12 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
           
-          <View style={styles.searchContainer}>
-            <Feather name="search" size={20} color="#666" style={styles.searchIcon} />
+          <View style={[styles.searchContainer, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+            <Feather name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: colors.text }]}
               placeholder="Search Teams, Players, Leagues, Events"
-              placeholderTextColor="#999"
+              placeholderTextColor={colors.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
               returnKeyType="search"
@@ -311,7 +328,7 @@ export default function HomeScreen() {
             {isSearching && <ActivityIndicator size="small" color="#007AFF" />}
             {searchQuery.length > 0 && !isSearching && (
               <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Feather name="x" size={20} color="#666" />
+                <Feather name="x" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
           </View>
@@ -326,9 +343,9 @@ export default function HomeScreen() {
     // Show loading state while searching
     if (isSearching) {
       return (
-        <View style={styles.searchLoadingContainer}>
+        <View style={[styles.searchLoadingContainer, { backgroundColor: colors.background }]}>
           <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.searchLoadingText}>Searching...</Text>
+          <Text style={[styles.searchLoadingText, { color: colors.text }]}>Searching...</Text>
         </View>
       );
     }
@@ -340,21 +357,21 @@ export default function HomeScreen() {
 
     if (!hasResults) {
       return (
-        <View style={styles.searchEmptyState}>
-          <Feather name="search" size={60} color="#ccc" />
-          <Text style={styles.searchEmptyText}>No results found for "{searchQuery}"</Text>
-          <Text style={styles.searchEmptySubtext}>Try searching for teams like "Arsenal", players like "Messi", or leagues like "Premier League"</Text>
+        <View style={[styles.searchEmptyState, { backgroundColor: colors.background }]}>
+          <Feather name="search" size={60} color={colors.textSecondary} />
+          <Text style={[styles.searchEmptyText, { color: colors.text }]}>No results found for "{searchQuery}"</Text>
+          <Text style={[styles.searchEmptySubtext, { color: colors.textSecondary }]}>Try searching for teams like "Arsenal", players like "Messi", or leagues like "Premier League"</Text>
         </View>
       );
     }
 
     return (
-      <View style={styles.searchResultsContainer}>
+      <View style={[styles.searchResultsContainer, { backgroundColor: colors.background }]}>
         {/* Search Results: Teams */}
         {searchResults.teams.length > 0 && (
           <View style={styles.searchSection}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Teams ({searchResults.teams.length})</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Teams ({searchResults.teams.length})</Text>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.searchScroll}>
               {searchResults.teams.map((team: any) => {
@@ -362,7 +379,7 @@ export default function HomeScreen() {
                 return (
                   <TouchableOpacity
                     key={team.idTeam}
-                    style={styles.searchCard}
+                    style={[styles.searchCard, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
                     onPress={() => router.push({
                       pathname: '/team-details/[id]',
                       params: { id: team.idTeam, teamData: JSON.stringify(team) }
@@ -377,8 +394,8 @@ export default function HomeScreen() {
                     ) : (
                       <Feather name="shield" size={40} color="#007AFF" />
                     )}
-                    <Text style={styles.searchCardTitle} numberOfLines={2}>{team.strTeam}</Text>
-                    <Text style={styles.searchCardSubtitle}>{team.strCountry}</Text>
+                    <Text style={[styles.searchCardTitle, { color: colors.text }]} numberOfLines={2}>{team.strTeam}</Text>
+                    <Text style={[styles.searchCardSubtitle, { color: colors.textSecondary }]}>{team.strCountry}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -390,21 +407,21 @@ export default function HomeScreen() {
         {searchResults.players.length > 0 && (
           <View style={styles.searchSection}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Players ({searchResults.players.length})</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Players ({searchResults.players.length})</Text>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.searchScroll}>
               {searchResults.players.map((player: any) => (
                 <TouchableOpacity
                   key={player.idPlayer}
-                  style={styles.searchCard}
+                  style={[styles.searchCard, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
                   onPress={() => router.push({
                     pathname: '/player-details/[id]',
                     params: { id: player.idPlayer, playerData: JSON.stringify(player) }
                   })}
                 >
                   <Feather name="user" size={40} color="#28a745" />
-                  <Text style={styles.searchCardTitle} numberOfLines={2}>{player.strPlayer}</Text>
-                  <Text style={styles.searchCardSubtitle}>{player.strTeam || player.strNationality}</Text>
+                  <Text style={[styles.searchCardTitle, { color: colors.text }]} numberOfLines={2}>{player.strPlayer}</Text>
+                  <Text style={[styles.searchCardSubtitle, { color: colors.textSecondary }]}>{player.strTeam || player.strNationality}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -415,21 +432,21 @@ export default function HomeScreen() {
         {searchResults.events.length > 0 && (
           <View style={styles.searchSection}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Events ({searchResults.events.length})</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Events ({searchResults.events.length})</Text>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.searchScroll}>
               {searchResults.events.map((event: any) => (
                 <TouchableOpacity
                   key={event.idEvent}
-                  style={styles.searchCard}
+                  style={[styles.searchCard, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
                   onPress={() => router.push({
                     pathname: '/event-details/[id]',
                     params: { id: event.idEvent, eventData: JSON.stringify(event) }
                   })}
                 >
                   <Feather name="calendar" size={40} color="#ff6347" />
-                  <Text style={styles.searchCardTitle} numberOfLines={2}>{event.strEvent}</Text>
-                  <Text style={styles.searchCardSubtitle}>{event.dateEvent}</Text>
+                  <Text style={[styles.searchCardTitle, { color: colors.text }]} numberOfLines={2}>{event.strEvent}</Text>
+                  <Text style={[styles.searchCardSubtitle, { color: colors.textSecondary }]}>{event.dateEvent}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -440,18 +457,18 @@ export default function HomeScreen() {
         {searchResults.leagues.length > 0 && (
           <View style={styles.searchSection}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Leagues ({searchResults.leagues.length})</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Leagues ({searchResults.leagues.length})</Text>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.searchScroll}>
               {searchResults.leagues.map((league: any) => (
                 <TouchableOpacity
                   key={league.idLeague}
-                  style={styles.searchCard}
+                  style={[styles.searchCard, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
                   onPress={() => handleLeaguePress(league.idLeague)}
                 >
                   <Feather name="award" size={40} color="#ffc107" />
-                  <Text style={styles.searchCardTitle} numberOfLines={2}>{league.strLeague}</Text>
-                  <Text style={styles.searchCardSubtitle}>{league.strCountry}</Text>
+                  <Text style={[styles.searchCardTitle, { color: colors.text }]} numberOfLines={2}>{league.strLeague}</Text>
+                  <Text style={[styles.searchCardSubtitle, { color: colors.textSecondary }]}>{league.strCountry}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -464,8 +481,8 @@ export default function HomeScreen() {
   const renderPopularTeams = () => {
     if (popularTeamsLoading && popularTeams.length === 0) {
       return (
-        <View style={styles.popularTeamsSection}>
-          <Text style={styles.sectionTitle}>Popular Teams (Loading...)</Text>
+        <View style={[styles.popularTeamsSection, { backgroundColor: colors.sectionBg }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Popular Teams (Loading...)</Text>
           <ActivityIndicator size="small" color="#007AFF" style={{ marginVertical: 20 }} />
         </View>
       );
@@ -476,9 +493,9 @@ export default function HomeScreen() {
     }
 
     return (
-      <Animated.View style={[styles.popularTeamsSection, { opacity: popularTeamsFadeAnim }]}>
+      <Animated.View style={[styles.popularTeamsSection, { opacity: popularTeamsFadeAnim, backgroundColor: colors.sectionBg }]}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Popular Teams</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Popular Teams</Text>
           <TouchableOpacity onPress={() => router.push('/(tabs)/explore')}>
             <Text style={styles.seeAllText}>See All</Text>
           </TouchableOpacity>
@@ -491,7 +508,7 @@ export default function HomeScreen() {
           {popularTeams.map((team) => (
             <TouchableOpacity
               key={team.idTeam}
-              style={styles.popularTeamCard}
+              style={[styles.popularTeamCard, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
               onPress={() => router.push({
                 pathname: '/team-details/[id]',
                 params: { id: team.idTeam, teamData: JSON.stringify(team) }
@@ -507,11 +524,11 @@ export default function HomeScreen() {
                 </View>
               ) : (
                 <View style={[styles.popularTeamImageContainer, styles.popularTeamImagePlaceholder]}>
-                  <Feather name="shield" size={40} color="#ccc" />
+                  <Feather name="shield" size={40} color={colors.textSecondary} />
                 </View>
               )}
-              <Text style={styles.popularTeamName} numberOfLines={2}>{team.strTeam}</Text>
-              <Text style={styles.popularTeamLeague} numberOfLines={1}>{team.strLeague}</Text>
+              <Text style={[styles.popularTeamName, { color: colors.text }]} numberOfLines={2}>{team.strTeam}</Text>
+              <Text style={[styles.popularTeamLeague, { color: colors.textSecondary }]} numberOfLines={1}>{team.strLeague}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -522,8 +539,8 @@ export default function HomeScreen() {
   const renderUpcomingEvents = () => {
     if (eventsLoading && filteredEvents.length === 0) {
       return (
-        <View style={styles.eventsSection}>
-          <Text style={styles.sectionTitle}>Upcoming Events (Loading...)</Text>
+        <View style={[styles.eventsSection, { backgroundColor: colors.sectionBg }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Upcoming Events (Loading...)</Text>
           <ActivityIndicator size="small" color="#007AFF" style={{ marginVertical: 20 }} />
         </View>
       );
@@ -531,9 +548,9 @@ export default function HomeScreen() {
 
     if (filteredEvents.length === 0) {
       return (
-        <View style={styles.eventsSection}>
-          <Text style={styles.sectionTitle}>Upcoming Events</Text>
-          <Text style={{ color: '#999', marginLeft: 16, marginTop: 10 }}>
+        <View style={[styles.eventsSection, { backgroundColor: colors.sectionBg }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Upcoming Events</Text>
+          <Text style={{ color: colors.textSecondary, marginLeft: 16, marginTop: 10 }}>
             {searchQuery ? 'No matching events found' : 'No upcoming events'}
           </Text>
         </View>
@@ -541,9 +558,9 @@ export default function HomeScreen() {
     }
 
     return (
-      <Animated.View style={[styles.eventsSection, { opacity: eventsFadeAnim }]}>
+      <Animated.View style={[styles.eventsSection, { opacity: eventsFadeAnim, backgroundColor: colors.sectionBg }]}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Upcoming Events ({filteredEvents.length})</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Upcoming Events ({filteredEvents.length})</Text>
           <TouchableOpacity onPress={refetchEvents}>
             <Feather name="refresh-cw" size={18} color="#007AFF" />
           </TouchableOpacity>
@@ -562,7 +579,15 @@ export default function HomeScreen() {
                 date={event.dateEvent}
                 time={event.strTime}
                 venue={event.strVenue}
-                onPress={() => handleEventPress(event.idEvent)}
+                thumbImage={event.strThumb}
+                squareImage={event.strSquare}
+                posterImage={event.strPoster}
+                homeTeamBadge={event.strHomeTeamBadge}
+                awayTeamBadge={event.strAwayTeamBadge}
+                homeScore={event.intHomeScore}
+                awayScore={event.intAwayScore}
+                status={event.strStatus}
+                onPress={() => handleEventPress(event)}
               />
             </View>
           ))}
@@ -581,9 +606,9 @@ export default function HomeScreen() {
     }
 
     return (
-      <Animated.View style={[styles.favouritesSection, { opacity: leaguesFadeAnim }]}>
+      <Animated.View style={[styles.favouritesSection, { opacity: leaguesFadeAnim, backgroundColor: colors.sectionBg }]}>
         <View style={styles.sectionHeaderCentered}>
-          <Text style={styles.sectionTitle}>Favourite Leagues</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Favourite Leagues</Text>
           <TouchableOpacity style={styles.sectionHeaderSeeAll} onPress={() => router.push('/(tabs)/favourites')}>
             <Text style={styles.seeAllText}>See All</Text>
           </TouchableOpacity>
@@ -612,8 +637,8 @@ export default function HomeScreen() {
   const renderCricketLeagues = () => {
     if (leaguesLoading && filteredLeagues.length === 0) {
       return (
-        <View style={styles.leaguesSection}>
-          <Text style={styles.sectionTitle}>Cricket Leagues (Loading...)</Text>
+        <View style={[styles.leaguesSection, { backgroundColor: colors.sectionBg }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Cricket Leagues (Loading...)</Text>
           <ActivityIndicator size="small" color="#007AFF" style={{ marginVertical: 20 }} />
         </View>
       );
@@ -621,9 +646,9 @@ export default function HomeScreen() {
 
     if (filteredLeagues.length === 0) {
       return (
-        <View style={styles.leaguesSection}>
-          <Text style={styles.sectionTitle}>Cricket Leagues</Text>
-          <Text style={{ color: '#999', marginTop: 10 }}>
+        <View style={[styles.leaguesSection, { backgroundColor: colors.sectionBg }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Cricket Leagues</Text>
+          <Text style={{ color: colors.textSecondary, marginTop: 10 }}>
             {searchQuery ? 'No matching leagues found' : 'No leagues available'}
           </Text>
         </View>
@@ -631,9 +656,9 @@ export default function HomeScreen() {
     }
 
     return (
-      <Animated.View style={[styles.leaguesSection, { opacity: leaguesFadeAnim }]}>
+      <Animated.View style={[styles.leaguesSection, { opacity: leaguesFadeAnim, backgroundColor: colors.sectionBg }]}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Cricket Leagues ({filteredLeagues.length})</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Cricket Leagues ({filteredLeagues.length})</Text>
           <TouchableOpacity onPress={refetchLeagues}>
             <Feather name="refresh-cw" size={18} color="#007AFF" />
           </TouchableOpacity>
@@ -713,7 +738,7 @@ export default function HomeScreen() {
 
   if (loading && teams.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         {renderHeroSection()}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#007AFF" />
@@ -725,7 +750,7 @@ export default function HomeScreen() {
 
   if (error && teams.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         {renderHeroSection()}
         {renderErrorState()}
       </SafeAreaView>
@@ -733,7 +758,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
         data={searchQuery.trim() ? [] : filteredTeams}
         renderItem={renderItem}

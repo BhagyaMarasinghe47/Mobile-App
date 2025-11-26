@@ -32,9 +32,19 @@ export default function FavouritesScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const favouriteTeamIds = useAppSelector((state) => state.favourites.teams);
+  const isDark = useAppSelector((state) => state.theme.isDarkMode);
   const [favouriteTeams, setFavouriteTeams] = useState<CricketTeam[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Dynamic colors based on theme
+  const colors = {
+    background: isDark ? '#000' : '#f8f9fa',
+    cardBackground: isDark ? '#1C1C1E' : '#fff',
+    text: isDark ? '#fff' : '#333',
+    textSecondary: isDark ? '#999' : '#666',
+    border: isDark ? '#2C2C2E' : '#e5e5e5',
+  };
 
   // Debug: Log the raw favourite IDs
   useEffect(() => {
@@ -153,7 +163,7 @@ export default function FavouritesScreen() {
 
     return (
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
         onPress={() => handleTeamPress(item)}
         activeOpacity={0.9}
       >
@@ -167,27 +177,27 @@ export default function FavouritesScreen() {
             />
           ) : (
             <View style={styles.placeholderImage}>
-              <Feather name="shield" size={40} color="#ccc" />
+              <Feather name="shield" size={40} color={colors.textSecondary} />
             </View>
           )}
         </View>
 
         <View style={styles.contentContainer}>
-          <Text style={styles.teamName} numberOfLines={2}>
+          <Text style={[styles.teamName, { color: colors.text }]} numberOfLines={2}>
             {item.strTeam}
           </Text>
 
           <View style={styles.infoRow}>
             {item.strCountry && (
               <View style={styles.infoItem}>
-                <Feather name="map-pin" size={12} color="#666" />
-                <Text style={styles.infoText}>{item.strCountry}</Text>
+                <Feather name="map-pin" size={12} color={colors.textSecondary} />
+                <Text style={[styles.infoText, { color: colors.textSecondary }]}>{item.strCountry}</Text>
               </View>
             )}
             {item.intFormedYear && (
               <View style={styles.infoItem}>
-                <Feather name="calendar" size={12} color="#666" />
-                <Text style={styles.infoText}>{item.intFormedYear}</Text>
+                <Feather name="calendar" size={12} color={colors.textSecondary} />
+                <Text style={[styles.infoText, { color: colors.textSecondary }]}>{item.intFormedYear}</Text>
               </View>
             )}
           </View>
@@ -207,9 +217,9 @@ export default function FavouritesScreen() {
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Feather name="heart" size={80} color="#ccc" />
-      <Text style={styles.emptyTitle}>No Favourite Teams</Text>
-      <Text style={styles.emptySubtitle}>
+      <Feather name="heart" size={80} color={colors.textSecondary} />
+      <Text style={[styles.emptyTitle, { color: colors.text }]}>No Favourite Teams</Text>
+      <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
         Go to Teams tab and tap the heart icon to add your favourite teams
       </Text>
       <TouchableOpacity
@@ -223,9 +233,9 @@ export default function FavouritesScreen() {
 
   if (loading && favouriteTeams.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Favourite Teams</Text>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { backgroundColor: colors.cardBackground, borderBottomColor: colors.border }]}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Favourite Teams</Text>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#007AFF" />
@@ -236,10 +246,10 @@ export default function FavouritesScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Favourite Teams</Text>
-        <Text style={styles.headerSubtitle}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.cardBackground, borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Favourite Teams</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
           {favouriteTeams.length} {favouriteTeams.length === 1 ? 'team' : 'teams'}
         </Text>
       </View>

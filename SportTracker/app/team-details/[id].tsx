@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import { useAppSelector } from '@/src/redux/store';
 
 const { width } = Dimensions.get('window');
 
@@ -40,13 +41,22 @@ export default function TeamDetailsScreen() {
   const params = useLocalSearchParams();
   const teamData: TeamData = params.teamData ? JSON.parse(params.teamData as string) : null;
   const [showFullDescription, setShowFullDescription] = useState(false);
+  
+  const isDark = useAppSelector((state) => state.theme.isDarkMode);
+  const colors = {
+    background: isDark ? '#000' : '#f8f9fa',
+    cardBackground: isDark ? '#1C1C1E' : '#fff',
+    text: isDark ? '#fff' : '#333',
+    textSecondary: isDark ? '#999' : '#666',
+    border: isDark ? '#2C2C2E' : '#e5e5e5',
+  };
 
   if (!teamData) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.errorContainer}>
           <Feather name="alert-circle" size={60} color="#ff3b30" />
-          <Text style={styles.errorText}>Team data not found</Text>
+          <Text style={[styles.errorText, { color: colors.text }]}>Team data not found</Text>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Text style={styles.backButtonText}>Go Back</Text>
           </TouchableOpacity>
@@ -63,10 +73,10 @@ export default function TeamDetailsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header with Badge Only */}
-        <View style={styles.headerContainer}>
+        <View style={[styles.headerContainer, { backgroundColor: colors.cardBackground }]}>
           {/* Team Badge */}
           {(
             teamData.strTeamBadge ||
@@ -91,49 +101,49 @@ export default function TeamDetailsScreen() {
 
         <View style={styles.contentContainer}>
           {/* Team Name */}
-          <Text style={styles.teamName}>{teamData.strTeam}</Text>
+          <Text style={[styles.teamName, { color: colors.text }]}>{teamData.strTeam}</Text>
 
           {/* Info Cards */}
           <View style={styles.infoCardsContainer}>
             {teamData.strCountry && (
-              <View style={styles.infoCard}>
+              <View style={[styles.infoCard, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
                 <Feather name="map-pin" size={20} color="#007AFF" />
                 <View style={styles.infoCardContent}>
-                  <Text style={styles.infoCardLabel}>Country</Text>
-                  <Text style={styles.infoCardValue}>{teamData.strCountry}</Text>
+                  <Text style={[styles.infoCardLabel, { color: colors.textSecondary }]}>Country</Text>
+                  <Text style={[styles.infoCardValue, { color: colors.text }]}>{teamData.strCountry}</Text>
                 </View>
               </View>
             )}
 
             {teamData.intFormedYear && (
-              <View style={styles.infoCard}>
+              <View style={[styles.infoCard, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
                 <Feather name="calendar" size={20} color="#007AFF" />
                 <View style={styles.infoCardContent}>
-                  <Text style={styles.infoCardLabel}>Founded</Text>
-                  <Text style={styles.infoCardValue}>{teamData.intFormedYear}</Text>
+                  <Text style={[styles.infoCardLabel, { color: colors.textSecondary }]}>Founded</Text>
+                  <Text style={[styles.infoCardValue, { color: colors.text }]}>{teamData.intFormedYear}</Text>
                 </View>
               </View>
             )}
 
             {teamData.strStadium && (
-              <View style={styles.infoCard}>
+              <View style={[styles.infoCard, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
                 <Feather name="home" size={20} color="#007AFF" />
                 <View style={styles.infoCardContent}>
-                  <Text style={styles.infoCardLabel}>Stadium</Text>
-                  <Text style={styles.infoCardValue}>{teamData.strStadium}</Text>
+                  <Text style={[styles.infoCardLabel, { color: colors.textSecondary }]}>Stadium</Text>
+                  <Text style={[styles.infoCardValue, { color: colors.text }]}>{teamData.strStadium}</Text>
                   {teamData.strStadiumLocation && (
-                    <Text style={styles.infoCardSubtext}>{teamData.strStadiumLocation}</Text>
+                    <Text style={[styles.infoCardSubtext, { color: colors.textSecondary }]}>{teamData.strStadiumLocation}</Text>
                   )}
                 </View>
               </View>
             )}
 
             {teamData.intStadiumCapacity && (
-              <View style={styles.infoCard}>
+              <View style={[styles.infoCard, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
                 <Feather name="users" size={20} color="#007AFF" />
                 <View style={styles.infoCardContent}>
-                  <Text style={styles.infoCardLabel}>Capacity</Text>
-                  <Text style={styles.infoCardValue}>
+                  <Text style={[styles.infoCardLabel, { color: colors.textSecondary }]}>Capacity</Text>
+                  <Text style={[styles.infoCardValue, { color: colors.text }]}>
                     {parseInt(teamData.intStadiumCapacity).toLocaleString()}
                   </Text>
                 </View>
@@ -141,21 +151,21 @@ export default function TeamDetailsScreen() {
             )}
 
             {teamData.strLeague && (
-              <View style={styles.infoCard}>
+              <View style={[styles.infoCard, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
                 <Feather name="award" size={20} color="#007AFF" />
                 <View style={styles.infoCardContent}>
-                  <Text style={styles.infoCardLabel}>League</Text>
-                  <Text style={styles.infoCardValue}>{teamData.strLeague}</Text>
+                  <Text style={[styles.infoCardLabel, { color: colors.textSecondary }]}>League</Text>
+                  <Text style={[styles.infoCardValue, { color: colors.text }]}>{teamData.strLeague}</Text>
                 </View>
               </View>
             )}
 
             {teamData.strManager && (
-              <View style={styles.infoCard}>
+              <View style={[styles.infoCard, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
                 <Feather name="user" size={20} color="#007AFF" />
                 <View style={styles.infoCardContent}>
-                  <Text style={styles.infoCardLabel}>Manager</Text>
-                  <Text style={styles.infoCardValue}>{teamData.strManager}</Text>
+                  <Text style={[styles.infoCardLabel, { color: colors.textSecondary }]}>Manager</Text>
+                  <Text style={[styles.infoCardValue, { color: colors.text }]}>{teamData.strManager}</Text>
                 </View>
               </View>
             )}
@@ -164,8 +174,28 @@ export default function TeamDetailsScreen() {
           {/* Description */}
           {teamData.strDescriptionEN && (
             <View style={styles.descriptionContainer}>
-              <Text style={styles.sectionTitle}>About</Text>
-              <Text style={styles.descriptionText}>{teamData.strDescriptionEN}</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>About</Text>
+              <Text 
+                style={[styles.descriptionText, { color: colors.textSecondary }]}
+                numberOfLines={showFullDescription ? undefined : 4}
+              >
+                {teamData.strDescriptionEN}
+              </Text>
+              {teamData.strDescriptionEN.length > 200 && (
+                <TouchableOpacity 
+                  style={styles.moreButton}
+                  onPress={() => setShowFullDescription(!showFullDescription)}
+                >
+                  <Text style={styles.moreButtonText}>
+                    {showFullDescription ? 'Show Less' : 'More Details'}
+                  </Text>
+                  <Feather 
+                    name={showFullDescription ? 'chevron-up' : 'chevron-down'} 
+                    size={16} 
+                    color="#007AFF" 
+                  />
+                </TouchableOpacity>
+              )}
             </View>
           )}
 
@@ -176,55 +206,55 @@ export default function TeamDetailsScreen() {
             teamData.strInstagram ||
             teamData.strYoutube) && (
             <View style={styles.socialContainer}>
-              <Text style={styles.sectionTitle}>Connect</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Connect</Text>
               <View style={styles.socialButtons}>
                 {teamData.strWebsite && (
                   <TouchableOpacity
-                    style={styles.socialButton}
+                    style={[styles.socialButton, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
                     onPress={() => openLink(teamData.strWebsite)}
                   >
                     <Feather name="globe" size={24} color="#007AFF" />
-                    <Text style={styles.socialButtonText}>Website</Text>
+                    <Text style={[styles.socialButtonText, { color: colors.text }]}>Website</Text>
                   </TouchableOpacity>
                 )}
 
                 {teamData.strFacebook && (
                   <TouchableOpacity
-                    style={styles.socialButton}
+                    style={[styles.socialButton, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
                     onPress={() => openLink(teamData.strFacebook)}
                   >
                     <Feather name="facebook" size={24} color="#1877F2" />
-                    <Text style={styles.socialButtonText}>Facebook</Text>
+                    <Text style={[styles.socialButtonText, { color: colors.text }]}>Facebook</Text>
                   </TouchableOpacity>
                 )}
 
                 {teamData.strTwitter && (
                   <TouchableOpacity
-                    style={styles.socialButton}
+                    style={[styles.socialButton, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
                     onPress={() => openLink(teamData.strTwitter)}
                   >
                     <Feather name="twitter" size={24} color="#1DA1F2" />
-                    <Text style={styles.socialButtonText}>Twitter</Text>
+                    <Text style={[styles.socialButtonText, { color: colors.text }]}>Twitter</Text>
                   </TouchableOpacity>
                 )}
 
                 {teamData.strInstagram && (
                   <TouchableOpacity
-                    style={styles.socialButton}
+                    style={[styles.socialButton, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
                     onPress={() => openLink(teamData.strInstagram)}
                   >
                     <Feather name="instagram" size={24} color="#E4405F" />
-                    <Text style={styles.socialButtonText}>Instagram</Text>
+                    <Text style={[styles.socialButtonText, { color: colors.text }]}>Instagram</Text>
                   </TouchableOpacity>
                 )}
 
                 {teamData.strYoutube && (
                   <TouchableOpacity
-                    style={styles.socialButton}
+                    style={[styles.socialButton, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
                     onPress={() => openLink(teamData.strYoutube)}
                   >
                     <Feather name="youtube" size={24} color="#FF0000" />
-                    <Text style={styles.socialButtonText}>YouTube</Text>
+                    <Text style={[styles.socialButtonText, { color: colors.text }]}>YouTube</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -330,6 +360,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#666',
     lineHeight: 24,
+  },
+  moreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  moreButtonText: {
+    fontSize: 14,
+    color: '#007AFF',
+    fontWeight: '600',
   },
   socialContainer: {
     backgroundColor: '#fff',

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, Image, ImageBackground } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
@@ -12,6 +12,14 @@ interface EventCardProps {
   date?: string;
   time?: string;
   venue?: string;
+  thumbImage?: string;
+  squareImage?: string;
+  posterImage?: string;
+  homeTeamBadge?: string;
+  awayTeamBadge?: string;
+  homeScore?: string;
+  awayScore?: string;
+  status?: string;
   onPress: () => void;
 }
 
@@ -22,6 +30,14 @@ export const EventCard: React.FC<EventCardProps> = ({
   date,
   time,
   venue,
+  thumbImage,
+  squareImage,
+  posterImage,
+  homeTeamBadge,
+  awayTeamBadge,
+  homeScore,
+  awayScore,
+  status,
   onPress,
 }) => {
   const formatDate = (dateString?: string) => {
@@ -34,42 +50,64 @@ export const EventCard: React.FC<EventCardProps> = ({
     });
   };
 
+  const displayImage = thumbImage || squareImage || posterImage;
+  const isFinished = status?.toLowerCase().includes('finished');
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
-      <View style={styles.header}>
-        <View style={styles.badge}>
-          <Feather name="calendar" size={16} color="#fff" />
-          <Text style={styles.badgeText}>Upcoming</Text>
-        </View>
-        <Text style={styles.date}>{formatDate(date)}</Text>
-      </View>
+      {/* Image at the very top */}
+      {displayImage && (
+        <Image
+          source={{ uri: displayImage }}
+          style={styles.topImage}
+          resizeMode="cover"
+        />
+      )}
 
+      {/* Content below image */}
       <View style={styles.content}>
-        <Text style={styles.eventName} numberOfLines={2}>
-          {eventName}
-        </Text>
-
         {(homeTeam || awayTeam) && (
-          <View style={styles.teamsContainer}>
-            <View style={styles.teamRow}>
-              <Text style={styles.teamLabel}>Home:</Text>
-              <Text style={styles.teamName} numberOfLines={1}>
+          <View style={styles.teamsRow}>
+            {/* Home Team - Left Side */}
+            <View style={styles.teamColumn}>
+              {homeTeamBadge && (
+                <Image source={{ uri: homeTeamBadge }} style={styles.teamBadge} resizeMode="contain" />
+              )}
+              <Text style={styles.teamName} numberOfLines={2}>
                 {homeTeam || 'TBA'}
               </Text>
+              {homeScore !== undefined && homeScore !== null && (
+                <Text style={styles.scoreText}>{homeScore}</Text>
+              )}
             </View>
+            
+            {/* VS in Center */}
             <View style={styles.vsContainer}>
               <Text style={styles.vsText}>VS</Text>
             </View>
-            <View style={styles.teamRow}>
-              <Text style={styles.teamLabel}>Away:</Text>
-              <Text style={styles.teamName} numberOfLines={1}>
+            
+            {/* Away Team - Right Side */}
+            <View style={styles.teamColumn}>
+              {awayTeamBadge && (
+                <Image source={{ uri: awayTeamBadge }} style={styles.teamBadge} resizeMode="contain" />
+              )}
+              <Text style={styles.teamName} numberOfLines={2}>
                 {awayTeam || 'TBA'}
               </Text>
+              {awayScore !== undefined && awayScore !== null && (
+                <Text style={styles.scoreText}>{awayScore}</Text>
+              )}
             </View>
           </View>
         )}
 
         <View style={styles.footer}>
+          {date && (
+            <View style={styles.infoItem}>
+              <Feather name="calendar" size={14} color="#666" />
+              <Text style={styles.infoText}>{formatDate(date)}</Text>
+            </View>
+          )}
           {time && (
             <View style={styles.infoItem}>
               <Feather name="clock" size={14} color="#666" />
@@ -85,10 +123,6 @@ export const EventCard: React.FC<EventCardProps> = ({
             </View>
           )}
         </View>
-      </View>
-
-      <View style={styles.chevronContainer}>
-        <Feather name="chevron-right" size={20} color="#007AFF" />
       </View>
     </TouchableOpacity>
   );
@@ -107,96 +141,69 @@ const styles = StyleSheet.create({
     elevation: 3,
     overflow: 'hidden',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    backgroundColor: '#f8f9fa',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FF9500',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  badgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  date: {
-    fontSize: 13,
-    color: '#666',
-    fontWeight: '500',
+  topImage: {
+    width: '100%',
+    height: 160,
   },
   content: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
-  eventName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 8,
-    lineHeight: 24,
-  },
-  teamsContainer: {
-    marginBottom: 8,
-  },
-  teamRow: {
+  teamsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    gap: 12,
   },
-  teamLabel: {
-    fontSize: 12,
-    color: '#999',
+  teamColumn: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 8,
+  },
+  teamBadge: {
     width: 50,
-    fontWeight: '500',
+    height: 50,
   },
   teamName: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#333',
-    fontWeight: '600',
-    flex: 1,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  scoreText: {
+    fontSize: 24,
+    color: '#007AFF',
+    fontWeight: '700',
   },
   vsContainer: {
     alignItems: 'center',
-    marginVertical: 4,
+    justifyContent: 'center',
+    paddingHorizontal: 8,
   },
   vsText: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#007AFF',
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   footer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e5e5',
   },
   infoItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    flex: 1,
-    minWidth: 100,
+    gap: 4,
   },
   infoText: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#666',
-    flex: 1,
-  },
-  chevronContainer: {
-    position: 'absolute',
-    right: 16,
-    top: '50%',
-    marginTop: -10,
+    fontWeight: '500',
   },
 });

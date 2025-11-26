@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ImageBackground,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
@@ -96,16 +97,22 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <ImageBackground
+      source={require('@/assets/images/Football game Photos .jpg')}
       style={styles.container}
+      resizeMode="cover"
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <View style={styles.header}>
-          <Feather name="activity" size={60} color="#007AFF" />
-          <Text style={styles.title}>SportTracker</Text>
-          <Text style={styles.subtitle}>Welcome back!</Text>
-        </View>
+      <View style={styles.overlay} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+          <View style={styles.header}>
+            <Feather name="activity" size={60} color="#fff" />
+            <Text style={styles.title}>KickZone</Text>
+            <Text style={styles.subtitle}>Welcome back!</Text>
+          </View>
 
         <View style={styles.form}>
           {/* Username Input */}
@@ -159,6 +166,13 @@ export default function LoginScreen() {
             <Text style={styles.buttonText}>Login</Text>
           </TouchableOpacity>
 
+          {/* Demo Credentials Info */}
+          <View style={styles.demoInfo}>
+            <Text style={styles.demoInfoText}>Demo Account:</Text>
+            <Text style={styles.demoCredentials}>Username: emilys</Text>
+            <Text style={styles.demoCredentials}>Password: emilyspass</Text>
+          </View>
+
           {/* Register Link */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don't have an account? </Text>
@@ -168,14 +182,21 @@ export default function LoginScreen() {
           </View>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  keyboardView: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
@@ -189,13 +210,19 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
     marginTop: 16,
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 10,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: '#fff',
     marginTop: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 10,
   },
   form: {
     width: '100%',
@@ -236,6 +263,25 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  demoInfo: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#007AFF',
+  },
+  demoInfoText: {
+    color: '#007AFF',
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  demoCredentials: {
+    color: '#333',
+    fontSize: 12,
+    fontFamily: 'monospace',
   },
   footer: {
     flexDirection: 'row',
