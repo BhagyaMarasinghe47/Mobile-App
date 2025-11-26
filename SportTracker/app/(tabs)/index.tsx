@@ -1,13 +1,50 @@
 import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Feather } from '@expo/vector-icons';
 
 import { HelloWave } from '@/components/hello-wave';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Link } from 'expo-router';
+import { useAppDispatch, useAppSelector } from '@redux/store';
+import { logout } from '@redux/slices/authSlice';
 
 export default function HomeScreen() {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            // Clear AsyncStorage
+            await AsyncStorage.removeItem('user');
+            await AsyncStorage.removeItem('token');
+            
+            // Clear Redux state
+            dispatch(logout());
+            
+            // Navigate to login
+            router.replace('/auth/login');
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -18,9 +55,25 @@ export default function HomeScreen() {
         />
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
+        <ThemedText type="title">Welcome{user ? `, ${user.firstName || user.username}` : ''}!</ThemedText>
         <HelloWave />
       </ThemedView>
+
+      {user && (
+        <ThemedView style={styles.userInfoContainer}>
+          <ThemedText type="subtitle">User Information</ThemedText>
+          <ThemedText>Email: {user.email}</ThemedText>
+          <ThemedText>Username: {user.username}</ThemedText>
+        </ThemedView>
+      )}
+
+      <ThemedView style={styles.stepContainer}>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Feather name="log-out" size={20} color="#fff" />
+          <ThemedText style={styles.logoutText}>Logout</ThemedText>
+        </TouchableOpacity>
+      </ThemedView>
+
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Step 1: Try it</ThemedText>
         <ThemedText>
@@ -84,6 +137,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  userInfoContainer: {
+    gap: 8,
+    marginBottom: 16,
+    padding: 16,
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    borderRadius: 8,
+  },
   stepContainer: {
     gap: 8,
     marginBottom: 8,
@@ -94,5 +154,20 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     position: 'absolute',
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ff3b30',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    gap: 8,
+  },
+  logoutText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
   },
 });
