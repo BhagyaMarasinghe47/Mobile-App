@@ -1,252 +1,516 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet, TouchableOpacity, Alert, FlatList, View, ActivityIndicator } from 'react-native';
+// Home Screen with Cricket Leagues, Events, Teams and Favourites
+import React, { useEffect, useMemo, useRef } from 'react';
+import {
+  StyleSheet,
+  FlatList,
+  View,
+  ActivityIndicator,
+  Text,
+  RefreshControl,
+  Animated,
+  SafeAreaView,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
-import { fetchLeagues } from '@redux/slices/leaguesSlice';
-import { addLeagueAsync, removeLeagueAsync, loadFavourites } from '@redux/slices/favouritesSlice';
+import { useCricketTeams } from '@/hooks/useCricketTeams';
+import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
+import { useCricketLeagues } from '@/hooks/useCricketLeagues';
+import { CricketCard } from '@/components/CricketCard';
+import { EventCard } from '@/components/EventCard';
+import { LeagueCard } from '@/components/LeagueCard';
+import type { CricketTeam, TeamStatus } from '@/src/types/cricket';
+import { useAppSelector } from '@redux/store';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
-import { useAppDispatch, useAppSelector } from '@redux/store';
-import { logout } from '@redux/slices/authSlice';
-import { addLeague, removeLeague } from '@redux/slices/favouritesSlice';
-import type { League } from '@api/cricketApi';
+const STATUS_OPTIONS: TeamStatus[] = ['Active', 'Popular', 'Upcoming'];
+
+const getRandomStatus = (): TeamStatus => {
+  return STATUS_OPTIONS[Math.floor(Math.random() * STATUS_OPTIONS.length)];
+};
 
 export default function HomeScreen() {
   const router = useRouter();
-  const dispatch = useAppDispatch();
+  const { teams, loading, error, refetch } = useCricketTeams();
+  const { events, loading: eventsLoading, error: eventsError, refetch: refetchEvents } = useUpcomingEvents();
+  const { leagues, loading: leaguesLoading, error: leaguesError, refetch: refetchLeagues } = useCricketLeagues();
   const { user } = useAppSelector((state) => state.auth);
-  const leaguesState = useAppSelector(s => s.leagues);
-  const favourites = useAppSelector(s => s.favourites);
-  const leagues = leaguesState.leagues as League[];
-  const leaguesLoading = leaguesState.loading;
-  const leaguesError = !!leaguesState.error;
+  const favourites = useAppSelector((state) => state.favourites);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const eventsFadeAnim = useRef(new Animated.Value(0)).current;
+  const leaguesFadeAnim = useRef(new Animated.Value(0)).current;
 
-  const handleLogout = async () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            // Clear AsyncStorage
-            await AsyncStorage.removeItem('user');
-            await AsyncStorage.removeItem('token');
-            
-            // Clear Redux state
-            dispatch(logout());
-            
-            // Navigate to login
-            router.replace('/auth/login');
-          },
-        },
-      ]
+  useEffect(() => {
+    if (!loading && teams.length > 0) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [loading, teams]);
+
+  useEffect(() => {
+    if (!eventsLoading && events.length > 0) {
+      Animated.timing(eventsFadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [eventsLoading, events]);
+
+  useEffect(() => {
+    if (!leaguesLoading && leagues.length > 0) {
+      Animated.timing(leaguesFadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [leaguesLoading, leagues]);
+
+  const teamsWithStatus = useMemo(() => {
+    return teams.map((team) => ({
+      ...team,
+      status: getRandomStatus(),
+    }));
+  }, [teams]);
+
+  const handleCardPress = (team: CricketTeam) => {
+    router.push({
+      pathname: '/details/[id]',
+      params: {
+        id: team.idTeam,
+        teamData: JSON.stringify(team),
+      },
+    });
+  };
+
+  const handleEventPress = (eventId: string) => {
+    console.log('Event pressed:', eventId);
+  };
+
+  const handleLeaguePress = (leagueId: string) => {
+    router.push({
+      pathname: '/(tabs)/explore',
+      params: { leagueId },
+    });
+  };
+
+  const handleRefresh = () => {
+    refetch();
+    refetchEvents();
+    refetchLeagues();
+  };
+
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <View>
+        <Text style={styles.greeting}>
+          Welcome back{user ? `, ${user.firstName || user.username}` : ''}! 👋
+        </Text>
+        <Text style={styles.subtitle}>Explore Cricket Teams & Events</Text>
+      </View>
+      <TouchableOpacity
+        style={styles.profileButton}
+        onPress={() => router.push('/(tabs)/profile')}
+      >
+        <Feather name="user" size={24} color="#007AFF" />
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderUpcomingEvents = () => {
+    if (eventsLoading && events.length === 0) {
+      return (
+        <View style={styles.eventsSection}>
+          <Text style={styles.sectionTitle}>Upcoming Events</Text>
+          <ActivityIndicator size="small" color="#007AFF" style={{ marginVertical: 20 }} />
+        </View>
+      );
+    }
+
+    if (events.length === 0) {
+      return null;
+    }
+
+    return (
+      <Animated.View style={[styles.eventsSection, { opacity: eventsFadeAnim }]}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Upcoming Events</Text>
+          <TouchableOpacity onPress={refetchEvents}>
+            <Feather name="refresh-cw" size={18} color="#007AFF" />
+          </TouchableOpacity>
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.eventsScroll}
+        >
+          {events.slice(0, 5).map((event) => (
+            <View key={event.idEvent} style={styles.eventCardWrapper}>
+              <EventCard
+                eventName={event.strEvent}
+                homeTeam={event.strHomeTeam}
+                awayTeam={event.strAwayTeam}
+                date={event.dateEvent}
+                time={event.strTime}
+                venue={event.strVenue}
+                onPress={() => handleEventPress(event.idEvent)}
+              />
+            </View>
+          ))}
+        </ScrollView>
+      </Animated.View>
     );
   };
 
-  useEffect(() => {
-    dispatch(loadFavourites());
-    dispatch(fetchLeagues());
-  }, []);
+  const renderFavouriteLeagues = () => {
+    const favouriteLeagues = leagues.filter(league => 
+      favourites.leagues.includes(Number(league.idLeague))
+    ).slice(0, 5);
 
-  const toggleFavourite = (id: number, isFav: boolean) => {
-    if (isFav) dispatch(removeLeagueAsync(id));
-    else dispatch(addLeagueAsync(id));
+    if (favouriteLeagues.length === 0) {
+      return null;
+    }
+
+    return (
+      <Animated.View style={[styles.favouritesSection, { opacity: leaguesFadeAnim }]}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Favourite Leagues</Text>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/favourites')}>
+            <Text style={styles.seeAllText}>See All</Text>
+          </TouchableOpacity>
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.leaguesScroll}
+        >
+          {favouriteLeagues.map((league) => (
+            <View key={league.idLeague} style={styles.leagueCardWrapper}>
+              <LeagueCard
+                image={league.strBadge || league.strLogo}
+                title={league.strLeague}
+                country={league.strCountry}
+                year={league.intFormedYear}
+                onPress={() => handleLeaguePress(league.idLeague)}
+              />
+            </View>
+          ))}
+        </ScrollView>
+      </Animated.View>
+    );
   };
 
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome{user ? `, ${user.firstName || user.username}` : ''}!</ThemedText>
-        <HelloWave />
-      </ThemedView>
+  const renderCricketLeagues = () => {
+    if (leaguesLoading && leagues.length === 0) {
+      return (
+        <View style={styles.leaguesSection}>
+          <Text style={styles.sectionTitle}>Cricket Leagues</Text>
+          <ActivityIndicator size="small" color="#007AFF" style={{ marginVertical: 20 }} />
+        </View>
+      );
+    }
 
-      {user && (
-        <ThemedView style={styles.userInfoContainer}>
-          <ThemedText type="subtitle">User Information</ThemedText>
-          <ThemedText>Email: {user.email}</ThemedText>
-          <ThemedText>Username: {user.username}</ThemedText>
-        </ThemedView>
-      )}
+    if (leagues.length === 0) {
+      return null;
+    }
 
-      <ThemedView style={styles.stepContainer}>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Feather name="log-out" size={20} color="#fff" />
-          <ThemedText style={styles.logoutText}>Logout</ThemedText>
-        </TouchableOpacity>
-      </ThemedView>
-
-      <ThemedView style={styles.sectionHeader}>
-        <ThemedText type="subtitle">Cricket Leagues</ThemedText>
-      </ThemedView>
-      {leaguesLoading && (
-        <ActivityIndicator style={{ marginVertical: 12 }} />
-      )}
-      {leaguesError && (
-        <ThemedText style={{ color: '#ff3b30' }}>Failed to load leagues.</ThemedText>
-      )}
-      <FlatList
-        data={leagues}
-        keyExtractor={(item) => item.idLeague}
-        renderItem={({ item }) => {
-          const fav = favourites.leagues.includes(Number(item.idLeague));
-          return (
-            <TouchableOpacity
-              style={styles.leagueRow}
-              onPress={() => router.push({ pathname: '/(tabs)/explore', params: { leagueId: item.idLeague } })}
-            >
-              <View style={{ flex: 1 }}>
-                <ThemedText type="defaultSemiBold">{item.strLeague}</ThemedText>
-                <ThemedText style={styles.leagueSport}>Cricket</ThemedText>
-              </View>
-              <TouchableOpacity
-                onPress={() => toggleFavourite(Number(item.idLeague), fav)}
-                style={styles.favButton}
-              >
-                <Feather name={fav ? 'star' : 'star'} size={20} color={fav ? '#FFD700' : '#999'} />
-              </TouchableOpacity>
-              <Feather name="chevron-right" size={20} color="#666" />
-            </TouchableOpacity>
-          );
-        }}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        style={{ marginBottom: 24 }}
-      />
-
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
+    return (
+      <Animated.View style={[styles.leaguesSection, { opacity: leaguesFadeAnim }]}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Cricket Leagues</Text>
+          <TouchableOpacity onPress={refetchLeagues}>
+            <Feather name="refresh-cw" size={18} color="#007AFF" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.leaguesGrid}>
+          {leagues.slice(0, 6).map((league) => (
+            <LeagueCard
+              key={league.idLeague}
+              image={league.strBadge || league.strLogo}
+              title={league.strLeague}
+              country={league.strCountry}
+              year={league.intFormedYear}
+              onPress={() => handleLeaguePress(league.idLeague)}
             />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+          ))}
+        </View>
+      </Animated.View>
+    );
+  };
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const renderTeamsSection = () => (
+    <View style={styles.teamsSection}>
+      <Text style={styles.sectionTitle}>Cricket Teams</Text>
+    </View>
+  );
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyState}>
+      <Feather name="inbox" size={64} color="#ccc" />
+      <Text style={styles.emptyText}>No cricket teams found</Text>
+      <Text style={styles.emptySubtext}>Pull down to refresh</Text>
+    </View>
+  );
+
+  const renderErrorState = () => (
+    <View style={styles.errorState}>
+      <Feather name="alert-circle" size={64} color="#ff3b30" />
+      <Text style={styles.errorText}>Failed to load teams</Text>
+      <Text style={styles.errorSubtext}>{error}</Text>
+      <TouchableOpacity style={styles.retryButton} onPress={refetch}>
+        <Text style={styles.retryText}>Retry</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderItem = ({ item }: { item: CricketTeam & { status: TeamStatus } }) => {
+    const animatedStyle = {
+      opacity: fadeAnim,
+      transform: [
+        {
+          translateY: fadeAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [20, 0],
+          }),
+        },
+      ],
+    };
+
+    return (
+      <Animated.View
+        style={[
+          styles.cardWrapper,
+          animatedStyle,
+          { opacity: loading ? 0 : fadeAnim },
+        ]}
+      >
+        <CricketCard
+          image={item.strTeamBadge}
+          title={item.strTeam}
+          description={item.strDescriptionEN}
+          status={item.status}
+          onPress={() => handleCardPress(item)}
+        />
+      </Animated.View>
+    );
+  };
+
+  if (loading && teams.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {renderHeader()}
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+          <Text style={styles.loadingText}>Loading cricket teams...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error && teams.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {renderHeader()}
+        {renderErrorState()}
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <FlatList
+        data={teamsWithStatus}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.idTeam}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          <>
+            {renderHeader()}
+            {renderUpcomingEvents()}
+            {renderFavouriteLeagues()}
+            {renderCricketLeagues()}
+            {renderTeamsSection()}
+          </>
+        }
+        ListEmptyComponent={renderEmptyState}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading || eventsLoading || leaguesLoading}
+            onRefresh={handleRefresh}
+            tintColor="#007AFF"
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
   },
-  userInfoContainer: {
-    gap: 8,
-    marginBottom: 16,
-    padding: 16,
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
-    borderRadius: 8,
+  greeting: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 4,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  subtitle: {
+    fontSize: 14,
+    color: '#666',
   },
-  sectionHeader: {
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-  leagueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: 'rgba(0,0,0,0.04)',
-    borderRadius: 8,
-  },
-  leagueSport: {
-    fontSize: 12,
-    opacity: 0.6,
-  },
-  favButton: {
-    marginHorizontal: 12,
-  },
-  separator: {
-    height: 8,
-  },
-  logoutButton: {
-    flexDirection: 'row',
+  profileButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#f0f0f0',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#ff3b30',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    gap: 8,
   },
-  logoutText: {
-    color: '#fff',
-    fontWeight: '600',
+  listContent: {
+    padding: 16,
+  },
+  row: {
+    justifyContent: 'space-between',
+  },
+  cardWrapper: {
+    marginBottom: 0,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
     fontSize: 16,
+    color: '#666',
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#666',
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 8,
+  },
+  errorState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 32,
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#ff3b30',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  errorSubtext: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: 20,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  eventsSection: {
+    backgroundColor: '#fff',
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#333',
+  },
+  eventsScroll: {
+    paddingLeft: 16,
+    paddingRight: 8,
+  },
+  eventCardWrapper: {
+    marginRight: 8,
+  },
+  teamsSection: {
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 8,
+  },
+  favouritesSection: {
+    backgroundColor: '#fff',
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
+  },
+  leaguesSection: {
+    backgroundColor: '#fff',
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
+  },
+  leaguesScroll: {
+    paddingLeft: 16,
+    paddingRight: 8,
+  },
+  leagueCardWrapper: {
+    marginRight: 8,
+  },
+  leaguesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  seeAllText: {
+    fontSize: 14,
+    color: '#007AFF',
+    fontWeight: '600',
   },
 });

@@ -7,6 +7,15 @@ export interface League {
   idLeague: string;
   strLeague: string;
   strSport: string;
+  strLeagueAlternate?: string;
+  strBadge?: string;
+  strBanner?: string;
+  strLogo?: string;
+  strPoster?: string;
+  strTrophy?: string;
+  strDescription?: string;
+  intFormedYear?: string;
+  strCountry?: string;
 }
 
 export interface Team {
