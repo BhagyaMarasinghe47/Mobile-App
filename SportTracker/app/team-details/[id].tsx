@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -39,6 +39,7 @@ export default function TeamDetailsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const teamData: TeamData = params.teamData ? JSON.parse(params.teamData as string) : null;
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   if (!teamData) {
     return (
@@ -64,32 +65,25 @@ export default function TeamDetailsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header with Banner */}
-        <View style={styles.bannerContainer}>
-          {teamData.strTeamBanner ? (
-            <Image
-              source={{ uri: teamData.strTeamBanner }}
-              style={styles.bannerImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={styles.placeholderBanner}>
-              <Feather name="image" size={80} color="#ccc" />
-            </View>
-          )}
-
-          {/* Back Button */}
-          <TouchableOpacity style={styles.backIconButton} onPress={() => router.back()}>
-            <Feather name="arrow-left" size={24} color="#fff" />
-          </TouchableOpacity>
-
-          {/* Team Badge Overlay */}
-          {teamData.strTeamBadge && (
-            <View style={styles.badgeOverlay}>
+        {/* Header with Badge Only */}
+        <View style={styles.headerContainer}>
+          {/* Team Badge */}
+          {(
+            teamData.strTeamBadge ||
+            (teamData as any).strBadge ||
+            (teamData as any).strTeamLogo ||
+            null
+          ) && (
+            <View style={styles.badgeContainer}>
               <Image
-                source={{ uri: teamData.strTeamBadge }}
-                style={styles.badgeImage}
+                source={{ uri:
+                  teamData.strTeamBadge ||
+                  (teamData as any).strBadge ||
+                  (teamData as any).strTeamLogo || ''
+                }}
+                style={styles.badgeImageLarge}
                 resizeMode="contain"
+                accessibilityLabel={`${teamData.strTeam} badge`}
               />
             </View>
           )}
@@ -247,57 +241,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
-  bannerContainer: {
+  headerContainer: {
     width: '100%',
-    height: 280,
-    position: 'relative',
-  },
-  bannerImage: {
-    width: '100%',
-    height: '100%',
-  },
-  placeholderBanner: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#f0f0f0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backIconButton: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeOverlay: {
-    position: 'absolute',
-    bottom: -50,
-    left: 20,
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    paddingVertical: 30,
+    paddingHorizontal: 20,
     backgroundColor: '#fff',
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-    borderWidth: 4,
-    borderColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
   },
-  badgeImage: {
-    width: 80,
-    height: 80,
+  badgeContainer: {
+    width: 120,
+    height: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeImageLarge: {
+    width: 120,
+    height: 120,
   },
   contentContainer: {
-    paddingTop: 60,
+    paddingTop: 24,
     paddingHorizontal: 20,
     paddingBottom: 40,
   },

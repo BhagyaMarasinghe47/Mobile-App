@@ -357,20 +357,31 @@ export default function HomeScreen() {
               <Text style={styles.sectionTitle}>Teams ({searchResults.teams.length})</Text>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.searchScroll}>
-              {searchResults.teams.map((team: any) => (
-                <TouchableOpacity
-                  key={team.idTeam}
-                  style={styles.searchCard}
-                  onPress={() => router.push({
-                    pathname: '/team-details/[id]',
-                    params: { id: team.idTeam, teamData: JSON.stringify(team) }
-                  })}
-                >
-                  <Feather name="shield" size={40} color="#007AFF" />
-                  <Text style={styles.searchCardTitle} numberOfLines={2}>{team.strTeam}</Text>
-                  <Text style={styles.searchCardSubtitle}>{team.strCountry}</Text>
-                </TouchableOpacity>
-              ))}
+              {searchResults.teams.map((team: any) => {
+                const badgeImage = team.strTeamBadge || team.strBadge || team.strTeamLogo || null;
+                return (
+                  <TouchableOpacity
+                    key={team.idTeam}
+                    style={styles.searchCard}
+                    onPress={() => router.push({
+                      pathname: '/team-details/[id]',
+                      params: { id: team.idTeam, teamData: JSON.stringify(team) }
+                    })}
+                  >
+                    {badgeImage ? (
+                      <Image
+                        source={{ uri: badgeImage }}
+                        style={styles.searchCardImage}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <Feather name="shield" size={40} color="#007AFF" />
+                    )}
+                    <Text style={styles.searchCardTitle} numberOfLines={2}>{team.strTeam}</Text>
+                    <Text style={styles.searchCardSubtitle}>{team.strCountry}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
           </View>
         )}
@@ -1068,6 +1079,10 @@ const styles = StyleSheet.create({
     elevation: 3,
     borderWidth: 1,
     borderColor: '#e5e5e5',
+  },
+  searchCardImage: {
+    width: 60,
+    height: 60,
   },
   searchCardTitle: {
     fontSize: 14,
