@@ -54,51 +54,72 @@ export default function LoginScreen() {
     try {
       dispatch(setLoading(true));
 
-      const response = await fetch(endpoints.auth.login, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: data.username,
-          password: data.password,
-        }),
-      });
+      // Get registered users from AsyncStorage
+      const registeredUsersJson = await AsyncStorage.getItem('registeredUsers');
+      const registeredUsers = registeredUsersJson ? JSON.parse(registeredUsersJson) : [];
 
-      const result = await response.json();
+      console.log('Registered Users:', registeredUsers);
+      console.log('Login attempt with:', data.username);
 
-      if (response.ok) {
+      // Find user by username or email
+      const user = registeredUsers.find(
+        (u: any) => 
+          (u.username === data.username || u.email === data.username) && 
+          u.password === data.password
+      );
+
+      console.log('Found user:', user);
+
+      if (user) {
+        // Create token
+        const token = 'local-token-' + Date.now();
+        
         const userData = {
-          id: result.id,
-          username: result.username,
-          email: result.email,
-          firstName: result.firstName,
-          lastName: result.lastName,
-          image: result.image,
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          image: user.image,
         };
 
         // Save to Redux
-        dispatch(loginSuccess({ user: userData, token: result.token }));
+        dispatch(loginSuccess({ user: userData, token }));
 
         // Persist to AsyncStorage
         await AsyncStorage.setItem('user', JSON.stringify(userData));
-        await AsyncStorage.setItem('token', result.token);
+        await AsyncStorage.setItem('token', token);
+
+        dispatch(setLoading(false));
 
         // Navigate to main tabs
         router.replace('/(tabs)');
       } else {
-        dispatch(setError(result.message || 'Login failed'));
-        Alert.alert('Error', result.message || 'Login failed');
+        dispatch(setLoading(false));
+        dispatch(setError('Invalid username or password'));
+        
+        // Show helpful message
+        if (registeredUsers.length === 0) {
+          Alert.alert(
+            'No Account Found', 
+            'Please register first to create an account.',
+            [{ text: 'Register', onPress: () => router.push('/auth/register') }]
+          );
+        } else {
+          Alert.alert('Error', `Invalid username or password.\n\nTip: Use your username "${registeredUsers[0]?.username}" or email "${registeredUsers[0]?.email}"`);
+        }
       }
     } catch (error) {
-      dispatch(setError('Network error. Please try again.'));
-      Alert.alert('Error', 'Network error. Please try again.');
+      console.error('Login error:', error);
+      dispatch(setLoading(false));
+      dispatch(setError('Login failed. Please try again.'));
+      Alert.alert('Error', 'Login failed. Please try again.');
     }
   };
 
   return (
     <ImageBackground
-      source={require('@/assets/images/Football game Photos .jpg')}
+      source={require('@/assets/images/download.jpg')}
       style={styles.container}
       resizeMode="cover"
     >
@@ -166,13 +187,6 @@ export default function LoginScreen() {
             <Text style={styles.buttonText}>Login</Text>
           </TouchableOpacity>
 
-          {/* Demo Credentials Info */}
-          <View style={styles.demoInfo}>
-            <Text style={styles.demoInfoText}>Demo Account:</Text>
-            <Text style={styles.demoCredentials}>Username: emilys</Text>
-            <Text style={styles.demoCredentials}>Password: emilyspass</Text>
-          </View>
-
           {/* Register Link */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don't have an account? </Text>
@@ -193,7 +207,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
   keyboardView: {
     flex: 1,
@@ -264,25 +278,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  demoInfo: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#007AFF',
-  },
-  demoInfoText: {
-    color: '#007AFF',
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  demoCredentials: {
-    color: '#333',
-    fontSize: 12,
-    fontFamily: 'monospace',
-  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -290,12 +285,13 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   footerText: {
-    color: '#666',
+    color: '#fff',
     fontSize: 14,
   },
   linkText: {
-    color: '#007AFF',
+    color: '#fff',
     fontSize: 14,
     fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });

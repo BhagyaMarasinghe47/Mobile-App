@@ -67,60 +67,74 @@ export default function RegisterScreen() {
     try {
       dispatch(setLoading(true));
 
-      const response = await fetch(endpoints.auth.register, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          password: data.password,
-        }),
-      });
+      // Check if user already exists
+      const existingUsersJson = await AsyncStorage.getItem('registeredUsers');
+      const existingUsers = existingUsersJson ? JSON.parse(existingUsersJson) : [];
+      
+      const username = data.email.split('@')[0];
+      const userExists = existingUsers.some(
+        (u: any) => u.email === data.email || u.username === username
+      );
 
-      const result = await response.json();
-
-      if (response.ok) {
-        // DummyJSON doesn't return a token on registration, so we'll create a mock one
-        const mockToken = 'mock-token-' + Date.now();
-        
-        const userData = {
-          id: result.id,
-          username: result.email.split('@')[0],
-          email: result.email,
-          firstName: result.firstName,
-          lastName: result.lastName,
-          image: result.image,
-        };
-
-        // Save to Redux
-        dispatch(registerSuccess({ user: userData, token: mockToken }));
-
-        // Persist to AsyncStorage
-        await AsyncStorage.setItem('user', JSON.stringify(userData));
-        await AsyncStorage.setItem('token', mockToken);
-
-        Alert.alert('Success', 'Account created successfully!', [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/(tabs)'),
-          },
-        ]);
-      } else {
-        dispatch(setError(result.message || 'Registration failed'));
-        Alert.alert('Error', result.message || 'Registration failed');
+      if (userExists) {
+        dispatch(setLoading(false));
+        Alert.alert('Error', 'User with this email already exists');
+        return;
       }
+
+      // Create new user
+      const newUser = {
+        id: Date.now().toString(),
+        username: username,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        password: data.password, // In production, this should be hashed
+        image: null,
+        createdAt: new Date().toISOString(),
+      };
+
+      // Save to registered users list
+      existingUsers.push(newUser);
+      await AsyncStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
+
+      // Create token
+      const token = 'local-token-' + Date.now();
+      
+      const userData = {
+        id: newUser.id,
+        username: newUser.username,
+        email: newUser.email,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        image: newUser.image,
+      };
+
+      // Save to Redux
+      dispatch(registerSuccess({ user: userData, token }));
+
+      // Persist current session
+      await AsyncStorage.setItem('user', JSON.stringify(userData));
+      await AsyncStorage.setItem('token', token);
+
+      dispatch(setLoading(false));
+
+      Alert.alert('Success', 'Account created successfully!', [
+        {
+          text: 'OK',
+          onPress: () => router.replace('/(tabs)'),
+        },
+      ]);
     } catch (error) {
-      dispatch(setError('Network error. Please try again.'));
-      Alert.alert('Error', 'Network error. Please try again.');
+      dispatch(setLoading(false));
+      dispatch(setError('Registration failed. Please try again.'));
+      Alert.alert('Error', 'Registration failed. Please try again.');
     }
   };
 
   return (
     <ImageBackground
-      source={require('@/assets/images/Football game Photos .jpg')}
+      source={require('@/assets/images/download.jpg')}
       style={styles.container}
       resizeMode="cover"
     >
@@ -274,7 +288,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
   keyboardView: {
     flex: 1,
@@ -352,12 +366,13 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   footerText: {
-    color: '#666',
+    color: '#fff',
     fontSize: 14,
   },
   linkText: {
-    color: '#007AFF',
+    color: '#fff',
     fontSize: 14,
     fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });
