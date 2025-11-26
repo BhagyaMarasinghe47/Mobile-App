@@ -1,4 +1,5 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
+import { getTeamsByLeagueId } from '@api/cricketApi';
 
 interface Team {
   id: number;
@@ -19,23 +20,30 @@ const initialState: TeamsState = {
   error: null,
 };
 
+export const fetchTeamsByLeague = createAsyncThunk('teams/fetchByLeague', async (leagueId: string) => {
+  const data = await getTeamsByLeagueId(leagueId);
+  return data;
+});
+
 const teamsSlice = createSlice({
   name: 'teams',
   initialState,
-  reducers: {
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.loading = action.payload;
-    },
-    setError: (state, action: PayloadAction<string | null>) => {
-      state.error = action.payload;
-    },
-    setTeams: (state, action: PayloadAction<Team[]>) => {
-      state.teams = action.payload;
-      state.loading = false;
-      state.error = null;
-    },
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchTeamsByLeague.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchTeamsByLeague.fulfilled, (state, action: PayloadAction<Team[]>) => {
+        state.teams = action.payload;
+        state.loading = false;
+      })
+      .addCase(fetchTeamsByLeague.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to fetch teams';
+      });
   },
 });
 
-export const { setLoading, setError, setTeams } = teamsSlice.actions;
 export default teamsSlice.reducer;

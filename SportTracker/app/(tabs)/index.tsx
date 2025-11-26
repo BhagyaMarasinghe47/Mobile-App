@@ -1,8 +1,11 @@
 import { Image } from 'expo-image';
-import { Platform, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { Platform, StyleSheet, TouchableOpacity, Alert, FlatList, View, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
+import { fetchLeagues } from '@redux/slices/leaguesSlice';
+import { addLeagueAsync, removeLeagueAsync, loadFavourites } from '@redux/slices/favouritesSlice';
 
 import { HelloWave } from '@/components/hello-wave';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
@@ -11,11 +14,18 @@ import { ThemedView } from '@/components/themed-view';
 import { Link } from 'expo-router';
 import { useAppDispatch, useAppSelector } from '@redux/store';
 import { logout } from '@redux/slices/authSlice';
+import { addLeague, removeLeague } from '@redux/slices/favouritesSlice';
+import type { League } from '@api/cricketApi';
 
 export default function HomeScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
+  const leaguesState = useAppSelector(s => s.leagues);
+  const favourites = useAppSelector(s => s.favourites);
+  const leagues = leaguesState.leagues as League[];
+  const leaguesLoading = leaguesState.loading;
+  const leaguesError = !!leaguesState.error;
 
   const handleLogout = async () => {
     Alert.alert(
@@ -43,6 +53,16 @@ export default function HomeScreen() {
         },
       ]
     );
+  };
+
+  useEffect(() => {
+    dispatch(loadFavourites());
+    dispatch(fetchLeagues());
+  }, []);
+
+  const toggleFavourite = (id: number, isFav: boolean) => {
+    if (isFav) dispatch(removeLeagueAsync(id));
+    else dispatch(addLeagueAsync(id));
   };
 
   return (
@@ -73,6 +93,43 @@ export default function HomeScreen() {
           <ThemedText style={styles.logoutText}>Logout</ThemedText>
         </TouchableOpacity>
       </ThemedView>
+
+      <ThemedView style={styles.sectionHeader}>
+        <ThemedText type="subtitle">Cricket Leagues</ThemedText>
+      </ThemedView>
+      {leaguesLoading && (
+        <ActivityIndicator style={{ marginVertical: 12 }} />
+      )}
+      {leaguesError && (
+        <ThemedText style={{ color: '#ff3b30' }}>Failed to load leagues.</ThemedText>
+      )}
+      <FlatList
+        data={leagues}
+        keyExtractor={(item) => item.idLeague}
+        renderItem={({ item }) => {
+          const fav = favourites.leagues.includes(Number(item.idLeague));
+          return (
+            <TouchableOpacity
+              style={styles.leagueRow}
+              onPress={() => router.push({ pathname: '/(tabs)/explore', params: { leagueId: item.idLeague } })}
+            >
+              <View style={{ flex: 1 }}>
+                <ThemedText type="defaultSemiBold">{item.strLeague}</ThemedText>
+                <ThemedText style={styles.leagueSport}>Cricket</ThemedText>
+              </View>
+              <TouchableOpacity
+                onPress={() => toggleFavourite(Number(item.idLeague), fav)}
+                style={styles.favButton}
+              >
+                <Feather name={fav ? 'star' : 'star'} size={20} color={fav ? '#FFD700' : '#999'} />
+              </TouchableOpacity>
+              <Feather name="chevron-right" size={20} color="#666" />
+            </TouchableOpacity>
+          );
+        }}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        style={{ marginBottom: 24 }}
+      />
 
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Step 1: Try it</ThemedText>
@@ -148,12 +205,34 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 8,
   },
+  sectionHeader: {
+    marginTop: 12,
+    marginBottom: 8,
+  },
   reactLogo: {
     height: 178,
     width: 290,
     bottom: 0,
     left: 0,
     position: 'absolute',
+  },
+  leagueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(0,0,0,0.04)',
+    borderRadius: 8,
+  },
+  leagueSport: {
+    fontSize: 12,
+    opacity: 0.6,
+  },
+  favButton: {
+    marginHorizontal: 12,
+  },
+  separator: {
+    height: 8,
   },
   logoutButton: {
     flexDirection: 'row',
