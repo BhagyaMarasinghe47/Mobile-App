@@ -294,16 +294,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e5e5e5',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: '700',
     color: '#333',
     marginBottom: 4,
+    textAlign: 'center',
   },
   headerSubtitle: {
     fontSize: 14,
     color: '#666',
+    textAlign: 'center',
   },
   searchContainer: {
     flexDirection: 'row',

@@ -302,7 +302,7 @@ export default function HomeScreen() {
             <Feather name="search" size={20} color="#666" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search soccer teams, players, leagues, events..."
+              placeholder="Search Teams, Players, Leagues, Events"
               placeholderTextColor="#999"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -571,9 +571,9 @@ export default function HomeScreen() {
 
     return (
       <Animated.View style={[styles.favouritesSection, { opacity: leaguesFadeAnim }]}>
-        <View style={styles.sectionHeader}>
+        <View style={styles.sectionHeaderCentered}>
           <Text style={styles.sectionTitle}>Favourite Leagues</Text>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/favourites')}>
+          <TouchableOpacity style={styles.sectionHeaderSeeAll} onPress={() => router.push('/(tabs)/favourites')}>
             <Text style={styles.seeAllText}>See All</Text>
           </TouchableOpacity>
         </View>
@@ -764,7 +764,7 @@ const styles = StyleSheet.create({
   },
   heroBackground: {
     width: '100%',
-    minHeight: 320,
+    minHeight: 280,
     justifyContent: 'center',
     overflow: 'hidden',
     borderBottomLeftRadius: 20,
@@ -772,14 +772,13 @@ const styles = StyleSheet.create({
   },
   heroImage: {
     resizeMode: 'cover',
-    top: 50,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
   heroOverlay: {
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
     width: '100%',
-    minHeight: 320,
+    minHeight: 280,
     justifyContent: 'center',
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
@@ -828,9 +827,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -842,7 +841,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     color: '#333',
   },
   listContent: {
@@ -915,13 +914,14 @@ const styles = StyleSheet.create({
   },
   eventsSection: {
     backgroundColor: '#fff',
-    paddingVertical: 8,
+    paddingVertical: 4,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e5e5',
   },
   popularTeamsSection: {
     backgroundColor: '#fff',
-    paddingVertical: 8,
+    paddingTop: 8,
+    paddingBottom: 4,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e5e5',
   },
@@ -979,6 +979,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     marginBottom: 16,
+  },
+  sectionHeaderCentered: {
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  sectionHeaderSeeAll: {
+    position: 'absolute',
+    right: 16,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
   },
   sectionTitle: {
     fontSize: 20,

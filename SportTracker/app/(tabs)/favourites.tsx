@@ -142,7 +142,14 @@ export default function FavouritesScreen() {
   };
 
   const renderTeamCard = ({ item }: { item: CricketTeam }) => {
-    const badgeImage = item.strTeamBadge;
+    const badgeImage =
+      item.strTeamBadge ||
+      // older/alternate fields
+      (item as any).strBadge ||
+      (item as any).strTeamLogo ||
+      item.strTeamBanner ||
+      (item as any).strTeamFanart ||
+      null;
 
     return (
       <TouchableOpacity
@@ -156,6 +163,7 @@ export default function FavouritesScreen() {
               source={{ uri: badgeImage }}
               style={styles.badgeImage}
               resizeMode="contain"
+              accessibilityLabel={`${item.strTeam} badge`}
             />
           ) : (
             <View style={styles.placeholderImage}>
@@ -217,7 +225,7 @@ export default function FavouritesScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Favourites</Text>
+          <Text style={styles.headerTitle}>Favourite Teams</Text>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#007AFF" />
@@ -230,7 +238,7 @@ export default function FavouritesScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Favourites</Text>
+        <Text style={styles.headerTitle}>Favourite Teams</Text>
         <Text style={styles.headerSubtitle}>
           {favouriteTeams.length} {favouriteTeams.length === 1 ? 'team' : 'teams'}
         </Text>
@@ -266,16 +274,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e5e5e5',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: '700',
     color: '#333',
     marginBottom: 4,
+    textAlign: 'center',
   },
   headerSubtitle: {
     fontSize: 14,
     color: '#666',
+    textAlign: 'center',
   },
   loadingContainer: {
     flex: 1,
