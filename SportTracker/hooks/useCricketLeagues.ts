@@ -31,7 +31,7 @@ export const useCricketLeagues = () => {
       setError(null);
       
       const response = await axios.get<LeaguesResponse>(
-        'https://www.thesportsdb.com/api/v1/json/3/all_leagues.php'
+        'https://www.thesportsdb.com/api/v1/json/3/search_all_leagues.php?s=Cricket'
       );
       
       if (response.data.leagues) {
@@ -39,7 +39,11 @@ export const useCricketLeagues = () => {
         const cricketLeagues = response.data.leagues
           .filter(league => league && league.strSport === 'Cricket')
           .slice(0, 20); // Limit to 20 leagues
+        console.log('Fetched leagues:', cricketLeagues.length);
         setLeagues(cricketLeagues);
+      } else {
+        console.log('No leagues in response');
+        setLeagues([]);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch leagues');

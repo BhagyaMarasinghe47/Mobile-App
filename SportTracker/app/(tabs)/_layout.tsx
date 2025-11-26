@@ -27,7 +27,7 @@ export default function TabLayout() {
         name="explore"
         options={{
           title: 'Teams',
-          tabBarIcon: ({ color, size }) => <Feather name="layers" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <Feather name="users" color={color} size={size} />,
         }}
       />
       <Tabs.Screen

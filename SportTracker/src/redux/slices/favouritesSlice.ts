@@ -19,8 +19,27 @@ export const loadFavourites = createAsyncThunk('favourites/load', async () => {
   try {
     const raw = await AsyncStorage.getItem(FAV_KEY);
     if (!raw) return initialState;
-    return JSON.parse(raw) as FavouritesState;
+    const loaded = JSON.parse(raw) as FavouritesState;
+    
+    // Remove duplicates from loaded data
+    const cleaned: FavouritesState = {
+      teams: [...new Set(loaded.teams || [])],
+      players: [...new Set(loaded.players || [])],
+      leagues: [...new Set(loaded.leagues || [])],
+    };
+    
+    console.log('Loaded favourites from storage:', loaded);
+    console.log('Cleaned favourites (removed duplicates):', cleaned);
+    
+    // Save cleaned data back to storage
+    if (JSON.stringify(loaded) !== JSON.stringify(cleaned)) {
+      await saveFavourites(cleaned);
+      console.log('Saved cleaned favourites back to storage');
+    }
+    
+    return cleaned;
   } catch (e) {
+    console.error('Error loading favourites:', e);
     return initialState;
   }
 });
@@ -35,8 +54,14 @@ export const saveFavourites = async (state: FavouritesState) => {
 
 export const addTeamAsync = createAsyncThunk('favourites/addTeam', async (id: number, { getState }) => {
   const state = (getState() as any).favourites as FavouritesState;
-  const teams = state.teams.includes(id) ? state.teams : [...state.teams, id];
+  // Prevent duplicates - only add if not already in array
+  if (state.teams.includes(id)) {
+    console.log(`Team ${id} already in favourites, skipping`);
+    return state;
+  }
+  const teams = [...state.teams, id];
   const next = { ...state, teams };
+  console.log(`Adding team ${id} to favourites. New favourites:`, teams);
   await saveFavourites(next);
   return next;
 });
@@ -45,6 +70,7 @@ export const removeTeamAsync = createAsyncThunk('favourites/removeTeam', async (
   const state = (getState() as any).favourites as FavouritesState;
   const teams = state.teams.filter(t => t !== id);
   const next = { ...state, teams };
+  console.log(`Removing team ${id} from favourites. Remaining:`, teams);
   await saveFavourites(next);
   return next;
 });
